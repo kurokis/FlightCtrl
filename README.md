@@ -1,7 +1,10 @@
 University of Tokyo FlightCtrl
 --
 
-This is alternative firmware for the MikroKopter FlitghtCtrl board developed by Chris Raabe at the University of Tokyo.
+This is alternative firmware for the MikroKopter FlightCtrl board originally developed by Chris Raabe at the University of Tokyo, and modified by Shota Kuroki at the University of Tokyo.
+
+Credit for original software goes to Chris Raabe.
+University of Tokyo FlightCtrl: https://github.com/ctraabe/FlightCtrl
 
 Status
 --
