@@ -16,6 +16,9 @@ void HandleUTRx(uint8_t id, const uint8_t * data_buffer)
     case UT_SERIAL_ID_BEEP_PATTERN:
       BeepPattern(((uint16_t *)data_buffer)[0]);
       break;
+    case UT_SERIAL_ID_ADCTRL:
+      //
+      break;
     default:
       break;
   }

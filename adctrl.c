@@ -41,27 +41,6 @@ void LimitAbsoluteValue(float * f, float limit_value);
 // Public functions:
 
 void InitializeAdctrl(void){
-	//// Pitch control parameters
-	//// Each row of sos is in the order of b0, b1, b2, a1, a2,
-	//// where H(z) = (b0 + b1 z^(-1) + b2 z^(-2))/(1 + a1 z^(-1) + a2 z^(-2)).
-  //static const float param_Ts = 1.0 / 64.0;
-	//const float param_Amx[3 * 3] = { -18.2608, -116.0832, -416.7778, 1.0, 0.0, 0.0, 0.0, //1.0, 0.0 };
-	//const float param_Bmx[3 * 1] = { 416.7778, 0.0, 0.0 };
-	//const float param_Bumx[3 * 2] = { 0.0, 0.0, 22.8236509641976, 0.0, 0.0, 3.59033651045612 //};
-	//const float param_Kgx = 1.0;
-	//const float param_Hsigma1x_sos[5] = { 1, 1, 0, -0.862605932256740, 0 };
-	//const float param_Hsigma1x_gain = 0.0686970338716300;
-	//const float param_Hsigma2x_sos[3 * 5] =
-	//	{ 1, 1.00000000000002, 0, -0.838441356785644, 0,
-	//	1, -1.58834393078936, 0.628749331604974, -1.79067670395884, 0.810270144832079,
-	//	1, -1.88728008178253, 0.895882227043795, -1.88728008177441, 0.895882227035360 };
-	//const float param_Hsigma2x_gain = 0.0391716164125069;
-	//const float param_Hsigma3x_sos[3 * 5] =
-	//	{ 1, 0.161558643197379, -0.838441356802643, -1.47604962743378, 0.534597143528093,
-	//	1, -1.72671627721722, 0.751448969686920, -1.79067670398270, 0.810270144844759,
-	//	1, -1.88728008176172, 0.895882227023675, -1.88728008169273, 0.895882226960021 };
-	//const float param_Hsigma3x_gain = 0.143544843154995;
-
 	// Pitch control parameters
 	// Each row of sos is in the order of b0, b1, b2, a1, a2,
 	// where H(z) = (b0 + b1 z^(-1) + b2 z^(-2))/(1 + a1 z^(-1) + a2 z^(-2)).
@@ -248,17 +227,6 @@ float AdaptiveControl(struct L1* l1, float* x_observer, float nominal_command)
 	float x_tilde[3];
 	Vector3Subtract(l1->x_predictor, x_observer, x_tilde);
 	Vector3SubtractFromSelf(l1->h, x_tilde); // update h
-
-	// h is an error integrator, and a limiter should be inserted
-	// in order to avoid very large values during takeoff,
-	// when the multicopter will not move in accordance with
-	// the reference model
-
-	//float h_limit = 0.2*128;
-	//LimitAbsoluteValue(&l1->h[0], h_limit);
-	//LimitAbsoluteValue(&l1->h[1], h_limit);
-	//LimitAbsoluteValue(&l1->h[2], h_limit);
-	//UARTPrintf("h:%f,%f,%f ",l1->h[0],l1->h[1],l1->h[2]);
 
 	// sigma = InvPhi*h - InvPhi*eAmTs*x_tilde
 	float* sigma = l1->sigma;

@@ -11,6 +11,7 @@
 
 enum UTSerialID {
   UT_SERIAL_ID_BEEP_PATTERN = 0,
+  UT_SERIAL_ID_ADCTRL
 };
 
 

@@ -10,7 +10,8 @@
 // =============================================================================
 // Private data:
 
-#define UT_HEADER_LENGTH (1)
+// start byte + payload length + id + unused byte
+#define UT_HEADER_LENGTH (4)
 
 
 // =============================================================================
@@ -73,7 +74,7 @@ enum UARTRxMode UTSerialRx(uint8_t byte, uint8_t * data_buffer)
 // set to zero.
 void UTSerialTx(uint8_t id, const uint8_t * source, uint8_t length)
 {
-  if ((length + 1 + UT_HEADER_LENGTH + 2) > UART_TX_BUFFER_LENGTH) return;
+  if ((UT_HEADER_LENGTH + length + 2) > UART_TX_BUFFER_LENGTH) return;
 
   uint8_t * tx_buffer = RequestUARTTxBuffer();
   if (!tx_buffer) return;
@@ -102,5 +103,5 @@ void UTSerialTx(uint8_t id, const uint8_t * source, uint8_t length)
   *tx_ptr++ = crc.bytes[0];
   *tx_ptr = crc.bytes[1];
 
-  UARTTxBuffer(length + UT_HEADER_LENGTH + 2);
+  UARTTxBuffer(UT_HEADER_LENGTH + length + 2);
 }

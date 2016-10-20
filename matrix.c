@@ -202,19 +202,19 @@ float * MatrixMultiplyByTranspose(const float * A, const float * B,
 float * MatrixMultiplyTransposeBy(const float * A, const float * B,
   size_t A_rows, size_t A_cols, size_t B_cols, float *result)
 {
-	for (size_t i = 0; i < A_cols; i++)
-	{
-		for (size_t j = 0; j < B_cols; j++)
-		{
-			result[i * B_cols + j] = 0;
-			for (size_t k = 0; k < A_rows; k++)
-			{
-				result[i * B_cols + j] += A[k * A_cols + i] * B[k * B_cols + j];
-			}
-		}
-	}
+  for (size_t i = 0; i < A_cols; i++)
+  {
+    for (size_t j = 0; j < B_cols; j++)
+    {
+      result[i * B_cols + j] = 0;
+      for (size_t k = 0; k < A_rows; k++)
+      {
+        result[i * B_cols + j] += A[k * A_cols + i] * B[k * B_cols + j];
+      }
+    }
+  }
 
-	return result;
+  return result;
 }
 
 // -----------------------------------------------------------------------------
