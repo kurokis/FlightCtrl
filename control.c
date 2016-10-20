@@ -30,6 +30,8 @@
 #include "vertical_speed.h"
 #include "adctrl.h" // adaptive control
 #include "uart.h" // for debug
+#include "timing.h" // GetTimestamp
+#include "ut_serial_protocol.h" // UT serial
 // TODO: remove
 #include "i2c.h"
 #include "indicator.h"
@@ -370,9 +372,9 @@ void Control(void)
   g_b_cmd[1] += nav_g_b_cmd_[1];
   thrust_cmd_ += nav_thrust_cmd_;
 
+  // Baseline control
   //QuaternionFromGravityAndHeadingCommand(g_b_cmd, &limits_, heading_cmd_,
   //  quat_cmd_);
-
   //// Update the pitch and roll Kalman filters before recomputing the command.
   //UpdateKalmanFilter(angular_cmd_, &kalman_coefficients_, &kalman_state_);
 
@@ -381,11 +383,42 @@ void Control(void)
   AdaptiveQuaternionFromGravityAndHeadingCommand(g_b_cmd, &limits_,
     heading_cmd_, &kalman_state_, quat_cmd_);
 
-  //UARTPrintfSafe("q:%f,%f,%f,%f\n",Quat()[0],Quat()[1],
-  //  Quat()[2],Quat()[3]);
 
-  UARTPrintfSafe("q_cmd,ad:%f,%f,%f,%f\n",quat_cmd_[0],quat_cmd_[1],
-    quat_cmd_[2],quat_cmd_[3]);
+  // Dump data at every 4 timesteps
+  static uint8_t c = 0;
+  c++;
+  if(c == 4)
+  {
+    c = 0;
+    // Specify the payload structure.
+    struct ToLogger {
+      uint16_t timestamp;
+      float quaternion[4];
+      float gyro[3];
+      float p_dot;
+      float q_dot;
+      float quaternion_command[4];
+    } __attribute__((packed));
+
+    uint8_t to_logger_buffer[54+6];
+    struct ToLogger * to_logger_ptr = (struct ToLogger *)&to_logger_buffer[0];
+    to_logger_ptr->timestamp = GetTimestamp();
+    to_logger_ptr->quaternion[0] = Quat()[0];
+    to_logger_ptr->quaternion[1] = Quat()[1];
+    to_logger_ptr->quaternion[2] = Quat()[2];
+    to_logger_ptr->quaternion[3] = Quat()[3];
+    to_logger_ptr->gyro[0] = AngularRate(X_BODY_AXIS);
+    to_logger_ptr->gyro[1] = AngularRate(Y_BODY_AXIS);
+    to_logger_ptr->gyro[2] = AngularRate(Z_BODY_AXIS);
+    to_logger_ptr->p_dot = kalman_state_.p_dot;
+    to_logger_ptr->q_dot = kalman_state_.q_dot;
+    to_logger_ptr->quaternion_command[0] = quat_cmd_[0];
+    to_logger_ptr->quaternion_command[1] = quat_cmd_[1];
+    to_logger_ptr->quaternion_command[2] = quat_cmd_[2];
+    to_logger_ptr->quaternion_command[3] = quat_cmd_[3];
+
+    UTSerialTx(UT_SERIAL_ID_ADCTRL,to_logger_buffer,sizeof(struct ToLogger));
+  }
 
   // Compute a new attitude acceleration command.
   // TODO: separate proportional and integral commands
@@ -774,7 +807,6 @@ static void AdaptiveQuaternionFromGravityAndHeadingCommand
   float ad_pitch_cmd = AdaptivePitchControl(pitch_states,-g_b_cmd[X_BODY_AXIS]);
   float ad_roll_cmd = AdaptiveRollControl(roll_states,g_b_cmd[Y_BODY_AXIS]);
 
-  UARTPrintfSafe("npc:%f,adpc:%f,",-g_b_cmd[X_BODY_AXIS],ad_pitch_cmd);
   g_b_cmd_ad[X_BODY_AXIS] = -ad_pitch_cmd;
   g_b_cmd_ad[Y_BODY_AXIS] = ad_roll_cmd;
 
