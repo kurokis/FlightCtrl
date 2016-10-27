@@ -386,13 +386,14 @@ void Control(void)
 
   // Dump data at every 4 timesteps
   static uint8_t c = 0;
-  c++;
-  if(c == 4)
+  if(++c == 4)
   {
     c = 0;
     // Specify the payload structure.
     struct ToLogger {
       uint16_t timestamp;
+      float gravity_command[2];
+      float heading_command;
       float quaternion[4];
       float gyro[3];
       float p_dot;
@@ -400,9 +401,12 @@ void Control(void)
       float quaternion_command[4];
     } __attribute__((packed));
 
-    uint8_t to_logger_buffer[54+6];
+    uint8_t to_logger_buffer[66+6];
     struct ToLogger * to_logger_ptr = (struct ToLogger *)&to_logger_buffer[0];
     to_logger_ptr->timestamp = GetTimestamp();
+    to_logger_ptr->gravity_command[0] = g_b_cmd[0];
+    to_logger_ptr->gravity_command[1] = g_b_cmd[1];
+    to_logger_ptr->heading_command = heading_cmd_;
     to_logger_ptr->quaternion[0] = Quat()[0];
     to_logger_ptr->quaternion[1] = Quat()[1];
     to_logger_ptr->quaternion[2] = Quat()[2];
