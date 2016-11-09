@@ -8,13 +8,6 @@
 
 
 // =============================================================================
-// Private data:
-
-// start byte + payload length + id + unused byte
-#define UT_HEADER_LENGTH (4)
-
-
-// =============================================================================
 // Public functions:
 
 // This function collects an incoming byte that is assumed to be part of a

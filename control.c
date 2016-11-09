@@ -44,8 +44,8 @@
 #define MAX_CMD (1840)
 #define MIN_THRUST_CMD (100)
 #define MAX_THRUST_CMD (1400)
-#define SBUS_TO_THRUST_CMD ((float)(MAX_THRUST_CMD - MIN_THRUST_CMD) \
-    / (2.0 * (float)SBUS_MAX))
+#define THRUST_CMD_RANGE (MAX_THRUST_CMD - MIN_THRUST_CMD)
+#define SBUS_TO_THRUST_CMD ((float)THRUST_CMD_RANGE / (2.0 * (float)SBUS_MAX))
 #define MAX_G_B_CMD (sin(M_PI / 6.0))
 // TODO: unify this with limits_.heading_rate
 #define MAX_HEADING_RATE (M_PI / 4.0)
@@ -54,8 +54,11 @@
 #define MAX_TRANSIT_SPEED (2.0)
 #define STARTING_SETPOINT (40)
 
-#define TAKEOFF_TRANSITION_SPEED (0.25)
+#define TAKEOFF_TRANSITION_SPEED (0.25)  // m/s
 #define POST_TAKEOFF_THRUST_ADJUSTMENT (-60)
+#define TAKEOFF_RESIDUAL_WASHOUT_RATE (2.5)  // %/s
+#define TAKEOFF_RESIDUAL_WASHOUT_STEP (TAKEOFF_RESIDUAL_WASHOUT_RATE / 100.0 \
+    * (float)(THRUST_CMD_RANGE) * DT)
 
 // Computed constants.
 static float actuation_inverse_[MAX_MOTORS][4];
@@ -305,13 +308,13 @@ void ControlInit(void)
   k_motor_lag_ = 1.0 / 0.1;
 #else  // Large quad
   // control proportion: 0.500000
-  feedback_gains_.p_dot = 1.147582995e+00;
-  feedback_gains_.p = 2.874714450e+01;
-  feedback_gains_.phi = 1.477784660e+02;
-  feedback_gains_.r = 5.019351450e+00;
-  feedback_gains_.psi = 1.493714521e+01;
+  feedback_gains_.p_dot = 1.167214545e+00;
+  feedback_gains_.p = 2.927511520e+01;
+  feedback_gains_.phi = 1.518682558e+02;
+  feedback_gains_.r = 5.240313279e+00;
+  feedback_gains_.psi = 1.623500801e+01;
 
-  feedback_gains_.psi_integral = 1.195915077e+01 * DT / feedback_gains_.psi;
+  feedback_gains_.psi_integral = 1.356024132e+01 * DT / feedback_gains_.psi;
 
   feedback_gains_.x_dot = 0.18;
   feedback_gains_.x = 0.135;
@@ -361,7 +364,6 @@ void Control(void)
   float g_b_cmd[2];  // Target x and y components of the gravity vector in body
   float heading_rate_cmd;
 
-  // TODO: add routines to form commands from an external source.
   // Derive a target attitude from the position of the sticks.
   CommandsFromSticks(g_b_cmd, &heading_cmd_, &heading_rate_cmd, &thrust_cmd_);
   CommandsForPositionControl(&feedback_gains_, &limits_, nav_g_b_cmd_,
@@ -584,13 +586,16 @@ static void CommandsForPositionControl(const struct FeedbackGains * k,
     }
     case CONTROL_MODE_MANUAL:
     default:
-      // TODO: saturate on the low end.
-      if (state->takeoff_thrust_residual > 0.25)
-        state->takeoff_thrust_residual -= 0.25;
-      else if (state->takeoff_thrust_residual < 0.25)
-        state->takeoff_thrust_residual += 0.25;
+      if (state->takeoff_thrust_residual > +TAKEOFF_RESIDUAL_WASHOUT_STEP)
+        state->takeoff_thrust_residual -= TAKEOFF_RESIDUAL_WASHOUT_STEP;
+      else if (state->takeoff_thrust_residual < -TAKEOFF_RESIDUAL_WASHOUT_STEP)
+        state->takeoff_thrust_residual += TAKEOFF_RESIDUAL_WASHOUT_STEP;
       else
         state->takeoff_thrust_residual = 0.0;
+
+        // TODO: saturate residual on the low side (requires access to thrust_cmd)
+        // if (state->takeoff_thrust_residual < MIN_THRUST_CMD - thrust_cmd)
+        //   state->takeoff_thrust_residual = MIN_THRUST_CMD - thrust_cmd;
       break;
   }
 
@@ -620,8 +625,7 @@ static void CommandsForPositionControl(const struct FeedbackGains * k,
     - position[E_WORLD_AXIS]) * k->x_integral, 0.25 * MAX_G_B_CMD);
   state->position_integral[D_WORLD_AXIS] = FloatSLimit(
     state->position_integral[D_WORLD_AXIS] + (model->position[D_WORLD_AXIS]
-    - position[D_WORLD_AXIS]) * k->z_integral, 0.15
-    * (MAX_THRUST_CMD - MIN_THRUST_CMD));
+    - position[D_WORLD_AXIS]) * k->z_integral, 0.15 * THRUST_CMD_RANGE);
 
   float position_error[3], velocity_error[3];
   Vector3Subtract(position_cmd, position, position_error);
@@ -668,7 +672,7 @@ static void CommandsForPositionControl(const struct FeedbackGains * k,
     + k->w_dot * -(-VerticalAcceleration())
     + k->w * velocity_error[D_WORLD_AXIS]
     + k->z * position_error[D_WORLD_AXIS]),
-    0.25 * (MAX_THRUST_CMD - MIN_THRUST_CMD))
+    0.25 * THRUST_CMD_RANGE)
     + state->position_integral[Z_BODY_AXIS]
     + baro_altitude_thrust_offset
     + state->takeoff_thrust_residual;
