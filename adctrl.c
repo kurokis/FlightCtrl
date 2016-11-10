@@ -44,43 +44,23 @@ void InitializeAdctrl(void){
   // Each row of sos is in the order of b0, b1, b2, a1, a2,
   // where H(z) = (b0 + b1 z^(-1) + b2 z^(-2))/(1 + a1 z^(-1) + a2 z^(-2)).
   const float Ts = 1.0 / 128.0;
-  const float Amx[3 * 3] = { -18.2608, -116.0832, -416.7778, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
-  const float Bmx[3 * 1] = { 416.7778, 0.0, 0.0 };
-  const float Bumx[3 * 2] = { 0.0, 0.0, 22.8236509641976, 0.0, 0.0, 3.59033651045612 };
+  const float Amx[3 * 3] =
+    { -36.90295082, -594.1758937, -3674.012659, 1, 0, 0, 0, 1, 0 };
+  const float Bmx[3 * 1] = { 3674.012659, 0, 0 };
+  const float Bumx[3 * 2] = { 0, 0, 99.5587772078336, 0, 0, 6.183375491929674 };
   const float Kgx = 1.0;
-  const float Hsigma1x_sos[5] = { 1, 1, 0, -0.928952473370368, 0};
-  const float Hsigma1x_gain = 0.0355237633148160;
+  const float Hsigma1x_sos[5] = { 1, 1, 0, -0.862606, 0 };
+  const float Hsigma1x_gain = 0.068697033871630;
   const float Hsigma2x_sos[3 * 5] =
-  {1, 0.999999999999996, 0, -0.915930103334231, 0,
-    1, -1.78271024700437, 0.793910026556812, -1.89500572127231, 0.900154271589516,
-    1, -1.94432602532649, 0.946531784176395, -1.94432602537699, 0.946531784226283};
-  const float Hsigma2x_gain = 0.0193235094840418;
+    { 1, 1, 0, -0.903714, 0,
+      1, -1.65133, 0.675635, -1.81325, 0.829109,
+      1, -1.81325, 0.829109, -1.97893, 0.979145 };
+  const float Hsigma2x_gain = 0.000426671819881097;
   const float Hsigma3x_sos[3 * 5] =
-  {1, 0.0840698979012963, -0.915930102098658, -1.71692624742807, 0.733656481878308,
-    1, -1.86039197103316, 0.867000231547777, -1.89500571525390, 0.900154266452988,
-    1, -1.94432602663162, 0.946531785448696, -1.94432603864920, 0.946531797105005};
-  const float Hsigma3x_gain = 0.0775227714255438;
-
-  //// Pitch control parameters (64 Hz)
-  //// Each row of sos is in the order of b0, b1, b2, a1, a2,
-  //// where H(z) = (b0 + b1 z^(-1) + b2 z^(-2))/(1 + a1 z^(-1) + a2 z^(-2)).
-  //const float Ts = 1.0 / 64.0;
-  //const float Amx[3 * 3] = { -18.2608, -116.0832, -416.7778, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
-  //const float Bmx[3 * 1] = { 416.7778, 0.0, 0.0 };
-  //const float Bumx[3 * 2] = { 0.0, 0.0, 22.8236509641976, 0.0, 0.0, 3.59033651045612 };
-  //const float Kgx = 1.0;
-  //const float Hsigma1x_sos[5] = {1, 1, 0, -0.862605932256740, 0};
-  //const float Hsigma1x_gain = 0.0686970338716301;
-  //const float Hsigma2x_sos[3 * 5] =
-  //  {1, 1, 0, -0.838441356785644, 0,
-  //  1, -1.58834393078936, 0.628749331604974, -1.79067670395884, 0.810270144832079,
-  //  1, -1.88728008178253, 0.895882227043795, -1.88728008177441, 0.895882227035360};
-  //const float Hsigma2x_gain = 0.0391716164125069;
-  //const float Hsigma3x_sos[3 * 5] =
-  //  {1, 0.161558643197379, -0.838441356802643, -1.47604962743378, 0.534597143528093,
-  //  1, -1.72671627721722, 0.751448969686920, -1.79067670398270, 0.810270144844759,
-  //  1, -1.88728008176172, 0.895882227023675, -1.88728008169273, 0.895882226960021};
-  //const float Hsigma3x_gain = 0.143544843154995;
+    { 1, 0.0962854, -0.903715, -1.90224, 0.902382,
+      1, -1.71806, 0.749611, -1.81325, 0.829109,
+      1, -1.81325, 0.829109, -1.97893, 0.979145 };
+  const float Hsigma3x_gain = 0.000005031069885030881;
 
   InitializeL1(&l1x, Ts, Amx, Bmx, Bumx, Kgx,
     Hsigma1x_sos, Hsigma1x_gain,
@@ -106,28 +86,32 @@ void InitializeAdctrl(void){
 float AdaptivePitchControl(float* pitch_states, float nominal_pitch_command)
 {
   // pitch_states: qdot, q, theta
-  float adaptive_pitch_command = AdaptiveControl(&l1x, pitch_states, nominal_pitch_command);
+  float adaptive_pitch_command = AdaptiveControl(&l1x, pitch_states,
+    nominal_pitch_command);
   return adaptive_pitch_command;
 }
 
 float AdaptiveRollControl(float* roll_states, float nominal_roll_command)
 {
   // roll_states: pdot, p, phi
-  float adaptive_roll_command = AdaptiveControl(&l1y, roll_states, nominal_roll_command);
+  float adaptive_roll_command = AdaptiveControl(&l1y, roll_states,
+    nominal_roll_command);
   return adaptive_roll_command;
 }
 
 //float AdaptiveThrustControl(float* thrust_states, float nominal_z_command)
 //{
 //  // thrust_states: wdot, w, z
-//  float adaptive_thrust_command = AdaptiveControl(&l1z, thrust_states, nominal_z_command);
+//  float adaptive_thrust_command = AdaptiveControl(&l1z, thrust_states,
+//    nominal_z_command);
 //  return adaptive_thrust_command;
 //}
 
 //float AdaptiveYawControl(float* yaw_states, float nominal_yaw_command)
 //{
 //  // yaw_states: rdot, r, psi
-//  float adaptive_yaw_command = AdaptiveControl(&l1psi, yaw_states, nominal_yaw_command);
+//  float adaptive_yaw_command = AdaptiveControl(&l1psi, yaw_states,
+//    nominal_yaw_command);
 //  return adaptive_yaw_command;
 //}
 
@@ -270,8 +254,8 @@ float AdaptiveControl(struct L1* l1, float* x_observer, float nominal_command)
 
   //------ State predictor ------
   float temp2[3];
-  float temp4 = (l1->Kg)*nominal_command + *delta_command + sigma[0];
-  MatrixMultiply(l1->Bm, &temp4, 3, 1, 1, temp);
+  float temp3 = (l1->Kg)*nominal_command + *delta_command + sigma[0];
+  MatrixMultiply(l1->Bm, &temp3, 3, 1, 1, temp);
   MatrixMultiply(l1->Bum, &sigma[1], 3, 2, 1, temp2);
 
   float delta_x_predictor[3], x_predictor_nv[3];
