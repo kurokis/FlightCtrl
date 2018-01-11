@@ -2,21 +2,21 @@
 # LOG_FLT_CTRL_DEBUG_TO_SD : sends extended data packet to nav for SD logging
 # MOTOR_TEST : enables motor/propeller response test routine
 
-TARGET := $(notdir $(shell pwd))
+TARGET := UT_FlightCtrl
 
-# PROGRAMMER := mk-programmer
-PROGRAMMER := avrisp2
+PROGRAMMER := mk-programmer
+# PROGRAMMER := avrisp2
 # PROGRAMMER := atmelice_isp
 
 MCU   := atmega1284p
 F_CPU := 20000000
 
-CCFLAGS   := -std=gnu11 -Wstrict-prototypes
-LDFLAGS   := -Ofast -Wall -Wextra -Wundef -Werror \
+CCFLAGS  := -std=gnu11 -Wstrict-prototypes
+LDFLAGS  := -Ofast -Wall -Wextra -Wundef -Werror \
             -fdata-sections -ffunction-sections -fshort-enums \
             -Wl,--relax,--gc-sections,-u,vfprintf -lprintf_flt -lm
 LTOFLAGS := -flto -fwhole-program
-ALLFLAGS  = -mmcu=$(MCU) -DF_CPU="$(F_CPU)UL" -DSMALL_QUAD
+ALLFLAGS  = -mmcu=$(MCU) -DF_CPU="$(F_CPU)UL" -DSMALL_QUAD #-DDEBUG
 
 PROGRAM_START := 0x0000
 EEPROM_START := 0x0000
@@ -53,7 +53,7 @@ ASSEMBLY := $(addsuffix .lst, $(addprefix $(BUILD_PATH)/, $(SOURCES)))
 HEADERS  := $(wildcard *.h)
 
 ELF := $(BUILD_PATH)/$(TARGET).elf
-HEX := $(BUILD_PATH)/$(TARGET).hex
+HEX := $(BUILD_PATH)/$(TARGET)_ATMEGA1284p.hex
 EEP := $(BUILD_PATH)/$(TARGET).eep
 LST := $(BUILD_PATH)/$(TARGET).lst
 
